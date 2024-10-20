@@ -29,6 +29,25 @@ type JwtAlgorithm =
   | 'none';
 
 /**
+ * Converts base64Url string to base64
+ *
+ * @param base64UrlEncoded The base64Url encoded string
+ *
+ * @returns The base64 encoded string
+ */
+function base64UrlToBase64(base64UrlEncoded: string): string {
+  // https://stackoverflow.com/questions/55389211/string-based-data-encoding-base64-vs-base64url
+  const res: Array<string> = [];
+  for (const ch of base64UrlEncoded) {
+    res.push(ch === '-' ? '+' : ch === '_' ? '/' : ch);
+  }
+  while (res.length % 4 !== 0) {
+    res.push('=');
+  }
+  return res.join('');
+}
+
+/**
  * Jwt issue type.
  */
 export interface JwtIssue<TInput extends string> extends BaseIssue<TInput> {
@@ -152,13 +171,20 @@ export function jwt(
         // `atob`
         // - for node env, marked as legacy
         //     https://github.com/DefinitelyTyped/DefinitelyTyped/issues/65494
-        // - assumes the passed input to be base64 encoded,
-        //     will have to convert base64Url encoded header to base64
-        const header = JSON.parse(atob(input.split('.')[0]));
+        const header: unknown = JSON.parse(
+          atob(base64UrlToBase64(input.split('.')[0]))
+        );
         return (
+          // `header` is an object
+          header !== null &&
+          typeof header === 'object' &&
+          // has a `typ` property associated to `'JWT'`
           'typ' in header &&
-          header.type === 'JWT' &&
-          (!('alg' in header) || header.alg === (this.algorithm ?? 'none'))
+          header.typ === 'JWT' &&
+          // no algorithm passed
+          (this.algorithm === undefined ||
+            // the passed algorithm matches the value of the `alg` property
+            ('alg' in header && header.alg === this.algorithm))
         );
       } catch {
         return false;

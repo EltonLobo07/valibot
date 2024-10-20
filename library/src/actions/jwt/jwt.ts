@@ -5,9 +5,14 @@ import type {
 } from '../../types/index.ts';
 import { _addIssue } from '../../utils/index.ts';
 
+/**
+ * Possible jwt regex.
+ */
 const POSSIBLE_JWT_REGEX = /^(?:[\w-]+\.){2}[\w-]+$/u;
 
-// https://datatracker.ietf.org/doc/html/rfc7518#section-3.1
+/**
+ * [Jwt algorithm](https://datatracker.ietf.org/doc/html/rfc7518#section-3.1) type
+ */
 type JwtAlgorithm =
   | 'HS256'
   | 'HS384'

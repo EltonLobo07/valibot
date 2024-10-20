@@ -23,37 +23,10 @@ type JwtAlgorithm =
   | 'PS512'
   | 'none';
 
-function isValidJwt(
-  input: string,
-  jwtAlgorithm: JwtAlgorithm | undefined
-): boolean {
-  if (!POSSIBLE_JWT_REGEX.test(input)) {
-    return false;
-  }
-  try {
-    // `atob`
-    // - for node env, marked as legacy
-    //     https://github.com/DefinitelyTyped/DefinitelyTyped/issues/65494
-    // - assumes the passed input to be base64 encoded,
-    //     will have to convert base64Url encoded header to base64
-    const header = JSON.parse(atob(input.split('.')[0]));
-    return (
-      'typ' in header &&
-      header.type === 'JWT' &&
-      (!('alg' in header) || header.alg === (jwtAlgorithm ?? 'none'))
-    );
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Jwt issue type.
  */
-export interface JwtIssue<
-  TInput extends string,
-  TJwtAlgorithm extends JwtAlgorithm | undefined,
-> extends BaseIssue<TInput> {
+export interface JwtIssue<TInput extends string> extends BaseIssue<TInput> {
   /**
    * The issue kind.
    */
@@ -71,9 +44,9 @@ export interface JwtIssue<
    */
   readonly received: `"${string}"`;
   /**
-   * The algorithm used to sign the jwt.
+   * The validation function.
    */
-  readonly algorithm: TJwtAlgorithm;
+  readonly requirement: (input: string) => boolean;
 }
 
 /**
@@ -82,8 +55,8 @@ export interface JwtIssue<
 export interface JwtAction<
   TInput extends string,
   TJwtAlgorithm extends JwtAlgorithm | undefined,
-  TMessage extends ErrorMessage<JwtIssue<TInput, TJwtAlgorithm>> | undefined,
-> extends BaseValidation<TInput, TInput, JwtIssue<TInput, TJwtAlgorithm>> {
+  TMessage extends ErrorMessage<JwtIssue<TInput>> | undefined,
+> extends BaseValidation<TInput, TInput, JwtIssue<TInput>> {
   /**
    * The action type.
    */
@@ -104,6 +77,10 @@ export interface JwtAction<
    * The error message.
    */
   readonly message: TMessage;
+  /**
+   * The validation function.
+   */
+  readonly requirement: (input: string) => boolean;
 }
 
 /**
@@ -140,28 +117,7 @@ export function jwt<
 export function jwt<
   TInput extends string,
   TJwtAlgorithm extends JwtAlgorithm | undefined,
-  const TMessage extends
-    | ErrorMessage<JwtIssue<TInput, TJwtAlgorithm>>
-    | undefined,
->(
-  jwtAlgorithm: TJwtAlgorithm,
-  message: TMessage
-): JwtAction<TInput, TJwtAlgorithm, TMessage>;
-
-/**
- * Creates a [jwt](https://en.wikipedia.org/wiki/JSON_Web_Token) validation action.
- *
- * @param jwtAlgorithm The algorithm used to sign the jwt.
- * @param message The error message.
- *
- * @returns A jwt action.
- */
-export function jwt<
-  TInput extends string,
-  TJwtAlgorithm extends JwtAlgorithm | undefined,
-  const TMessage extends
-    | ErrorMessage<JwtIssue<TInput, TJwtAlgorithm>>
-    | undefined,
+  const TMessage extends ErrorMessage<JwtIssue<TInput>> | undefined,
 >(
   jwtAlgorithm: TJwtAlgorithm,
   message: TMessage
@@ -169,11 +125,11 @@ export function jwt<
 
 export function jwt(
   jwtAlgorithm?: JwtAlgorithm | undefined,
-  message?: ErrorMessage<JwtIssue<string, JwtAlgorithm | undefined>>
+  message?: ErrorMessage<JwtIssue<string>>
 ): JwtAction<
   string,
   JwtAlgorithm | undefined,
-  ErrorMessage<JwtIssue<string, JwtAlgorithm | undefined>> | undefined
+  ErrorMessage<JwtIssue<string>> | undefined
 > {
   return {
     kind: 'validation',
@@ -183,8 +139,28 @@ export function jwt(
     expects: null,
     message,
     algorithm: jwtAlgorithm,
+    requirement(input) {
+      if (!POSSIBLE_JWT_REGEX.test(input)) {
+        return false;
+      }
+      try {
+        // `atob`
+        // - for node env, marked as legacy
+        //     https://github.com/DefinitelyTyped/DefinitelyTyped/issues/65494
+        // - assumes the passed input to be base64 encoded,
+        //     will have to convert base64Url encoded header to base64
+        const header = JSON.parse(atob(input.split('.')[0]));
+        return (
+          'typ' in header &&
+          header.type === 'JWT' &&
+          (!('alg' in header) || header.alg === (this.algorithm ?? 'none'))
+        );
+      } catch {
+        return false;
+      }
+    },
     '~validate'(dataset, config) {
-      if (dataset.typed && !isValidJwt(dataset.value, jwtAlgorithm)) {
+      if (dataset.typed && !this.requirement(dataset.value)) {
         _addIssue(this, 'jwt', dataset, config);
       }
       return dataset;

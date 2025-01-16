@@ -1,5 +1,6 @@
-import type { BaseTransformation } from '../../types/index.ts';
+import type { BaseTransformation, SuccessDataset } from '../../types/index.ts';
 import type { ObjectInput, StringKeyTuples } from './globalTypes.ts';
+import { snakeCase } from './helpers.ts';
 import type { Output } from './types.ts';
 
 /**
@@ -63,7 +64,20 @@ export function toSnakeCase(
     async: false,
     selectedKeys,
     '~run'(dataset) {
-      throw new Error('unimplemented');
+      const keys = this.selectedKeys ?? Object.keys(dataset.value);
+      for (const key of keys) {
+        const transformedKey = snakeCase(key);
+        if (key === transformedKey) {
+          continue;
+        }
+        if (!Object.hasOwn(dataset.value, transformedKey)) {
+          dataset.value[transformedKey] = dataset.value[key];
+        }
+        delete dataset.value[key];
+      }
+      return dataset as SuccessDataset<
+        Output<ObjectInput, StringKeyTuples<ObjectInput> | undefined>
+      >;
     },
   };
 }

@@ -6,6 +6,19 @@ import type {
 } from './globalTypes.ts';
 
 /**
+ * Result key type.
+ */
+type ResultKey<
+  TKey extends string,
+  TTransformedKey extends string,
+  TInputKeys,
+> = TKey extends TTransformedKey
+  ? TKey
+  : TTransformedKey extends TInputKeys
+    ? never
+    : TTransformedKey;
+
+/**
  * Internal output type.
  */
 type _Output<
@@ -14,12 +27,13 @@ type _Output<
   // helper type parameters to reduce computation
   TSelectedUnion extends string = StringTupleToUnion<TSelectedKeys>,
   TSelectedUnionIsNever extends boolean = IsNever<TSelectedUnion>,
+  TInputKeys = keyof TInput,
 > = {
   [K in keyof TInput as K extends string
     ? TSelectedUnionIsNever extends true
-      ? ToSnakeCase<K>
+      ? ResultKey<K, ToSnakeCase<K>, TInputKeys>
       : K extends TSelectedUnion
-        ? ToSnakeCase<K>
+        ? ResultKey<K, ToSnakeCase<K>, TInputKeys>
         : K
     : K]: TInput[K];
 };

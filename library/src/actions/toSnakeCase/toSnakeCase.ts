@@ -1,14 +1,14 @@
 import type { BaseTransformation, SuccessDataset } from '../../types/index.ts';
-import type { ObjectInput, StringKeyTuples } from './globalTypes.ts';
+import type { ObjectInput } from '../types.ts';
 import { snakeCase } from './helpers.ts';
-import type { Output } from './types.ts';
+import type { Output, SelectedStringKeys } from './types.ts';
 
 /**
  * To snake case action interface.
  */
 export interface ToSnakeCaseAction<
   TInput extends ObjectInput,
-  TSelectedKeys extends StringKeyTuples<TInput> | undefined,
+  TSelectedKeys extends SelectedStringKeys<TInput> | undefined,
 > extends BaseTransformation<TInput, Output<TInput, TSelectedKeys>, never> {
   /**
    * The action type.
@@ -43,7 +43,7 @@ export function toSnakeCase<TInput extends ObjectInput>(): ToSnakeCaseAction<
  */
 export function toSnakeCase<
   TInput extends ObjectInput,
-  TSelectedKeys extends StringKeyTuples<TInput>,
+  TSelectedKeys extends SelectedStringKeys<TInput>,
 >(selectedKeys: TSelectedKeys): ToSnakeCaseAction<TInput, TSelectedKeys>;
 
 /**
@@ -55,8 +55,8 @@ export function toSnakeCase<
  */
 // @__NO_SIDE_EFFECTS__
 export function toSnakeCase(
-  selectedKeys?: StringKeyTuples<ObjectInput>
-): ToSnakeCaseAction<ObjectInput, StringKeyTuples<ObjectInput> | undefined> {
+  selectedKeys?: SelectedStringKeys<ObjectInput>
+): ToSnakeCaseAction<ObjectInput, SelectedStringKeys<ObjectInput> | undefined> {
   return {
     kind: 'transformation',
     type: 'to_snake_case',
@@ -76,7 +76,7 @@ export function toSnakeCase(
         delete dataset.value[key];
       }
       return dataset as SuccessDataset<
-        Output<ObjectInput, StringKeyTuples<ObjectInput> | undefined>
+        Output<ObjectInput, SelectedStringKeys<ObjectInput> | undefined>
       >;
     },
   };

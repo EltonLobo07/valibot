@@ -1,8 +1,8 @@
 /**
- * Converts a string to its snake case version.
+ * Converts a string to snake case.
  *
- * @param input The string to be converted to snake case.
- * @returns The snake case version of the input.
+ * @param input The string to be converted.
+ * @returns The snake case of the input.
  */
 export function snakeCase(input: string): string {
   const res: string[] = [];

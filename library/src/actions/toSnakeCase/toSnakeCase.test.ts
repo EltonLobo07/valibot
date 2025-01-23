@@ -10,7 +10,7 @@ describe('toSnakeCase', () => {
       helloWorld: boolean;
     };
 
-    test('with undefined selected keys', () => {
+    test('with no selected keys', () => {
       expect(toSnakeCase<Input>()).toStrictEqual({
         kind: 'transformation',
         type: 'to_snake_case',
@@ -21,7 +21,7 @@ describe('toSnakeCase', () => {
       } satisfies ToSnakeCaseAction<Input, undefined>);
     });
 
-    test('with specific selected keys', () => {
+    test('with selected keys', () => {
       expect(toSnakeCase<Input, ['fooBar']>(['fooBar'])).toStrictEqual({
         kind: 'transformation',
         type: 'to_snake_case',
@@ -46,11 +46,9 @@ describe('toSnakeCase', () => {
               Foo: 'Foo',
               fooBar: 'fooBar',
               FooBar: 'FooBar',
+              Foo_Bar: 'Foo_Bar',
               helloWorld: 'helloWorld',
               bar_foo: 'bar_foo',
-              // todo: figure out the transformation result of: bar_Foo
-              // possible answers:  bar__foo, bar_foo
-              // the current implementation produces bar__foo
             },
           },
           {}
@@ -63,6 +61,7 @@ describe('toSnakeCase', () => {
           Foo: 'Foo',
           foo_bar: 'fooBar',
           Foo_bar: 'FooBar',
+          Foo__bar: 'Foo_Bar',
           hello_world: 'helloWorld',
           bar_foo: 'bar_foo',
         },

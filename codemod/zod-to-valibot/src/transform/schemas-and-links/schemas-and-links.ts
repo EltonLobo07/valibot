@@ -25,6 +25,7 @@ import {
   transformPassthrough,
   transformPick,
   transformRequired,
+  transformRest,
   transformSafeParse,
   transformSafeParseAsync,
   transformStrict,
@@ -56,6 +57,7 @@ import {
   transformRecord,
   transformSet,
   transformString,
+  transformTuple,
   transformUnion,
 } from './schemas';
 import { ZodSchemaType } from './types';
@@ -171,6 +173,8 @@ function toValibotSchemaExp(
       return transformRecord(...args);
     case 'set':
       return transformSet(...args);
+    case 'tuple':
+      return transformTuple(...args);
     case 'union':
       return transformUnion(...args);
     default: {
@@ -336,6 +340,8 @@ function toValibotMethodExp(
       return transformPick(...args);
     case 'required':
       return transformRequired(...args);
+    case 'rest':
+      return transformRest(...args);
     case 'safeParse':
       return transformSafeParse(...args);
     case 'safeParseAsync':
